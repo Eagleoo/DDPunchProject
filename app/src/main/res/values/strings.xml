@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">钉钉自动打卡</string>
+    <string name="tv_note">注意:本应用需要打开辅助功能和通知功能,否者程序功能无法正常使用。打开通知权限可接收打卡邮箱提醒。</string>
+    <string name="app_running">程序正在运行</string>
+    <string name="cur_time">当前时间：</string>
+    <string name="tv_version">版本号：</string>
+    <string name="format24Hour">HH:mm:ss</string>
+</resources>
