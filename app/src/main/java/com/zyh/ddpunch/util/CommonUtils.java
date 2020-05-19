@@ -4,11 +4,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.media.Image;
+import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.zyh.ddpunch.constant.Constant.sdCardDir;
 
 /**
  * Author: zyh
@@ -68,5 +78,39 @@ public class CommonUtils {
             e.printStackTrace();
         }
         return localVersion;
+    }
+
+    public static Bitmap buffer2Bitmap(Image image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        final Image.Plane[] planes = image.getPlanes();
+        // 每个像素的间距
+        int pixelStride = planes[0].getPixelStride();
+        final ByteBuffer buffer = planes[0].getBuffer();
+        // 总的间距
+        int rowStride = planes[0].getRowStride();
+        int rowPadding = rowStride - pixelStride * width;
+        Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
+
+        bitmap.copyPixelsFromBuffer(buffer);
+        return bitmap;
+    }
+
+    public static void saveBitmap(Bitmap bm) {
+        try {
+            File dirFile = new File(sdCardDir);
+            if (!dirFile.exists()) {
+                dirFile.mkdirs();
+            }
+            File file = new File(sdCardDir, "tmplName" + ".jpg");
+            FileOutputStream fos = new FileOutputStream(file);
+            bm.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

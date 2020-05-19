@@ -2,12 +2,13 @@ package com.zyh.ddpunch.service;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
+import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
 import com.zyh.ddpunch.constant.Constant;
-import com.zyh.ddpunch.util.LogUtil;
+import com.zyh.ddpunch.util.log.Logger;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ import static com.zyh.ddpunch.util.CommonUtils.startApplication;
 
 public class MainAccessService extends AccessibilityService {
 
+    private String TAG = MainAccessService.class.getSimpleName();
     private AccessibilityNodeInfo node;
 
     @Override
@@ -40,38 +42,37 @@ public class MainAccessService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        LogUtil.E("------MainAccessService------" + "辅助服务启动-------");
+        Logger.d("------MainAccessService------" + "辅助服务启动-------");
         startCSer();
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        LogUtil.E("------" + event.getPackageName());
+        Log.v(TAG, "------" + event.getPackageName());
     }
 
     private void startCSer() {
         startApplication(getApplicationContext(), Constant.dingding_PakeName);
-        Disposable subscribe = Observable.timer(15, TimeUnit.SECONDS)
+        Disposable subscribe = Observable.timer(15, TimeUnit.SECONDS)//打开钉钉界面有延迟
                 .subscribeOn(Schedulers.io())
                 .doOnNext(new Consumer<Long>() {
                     @Override
                     public void accept(Long aLong) throws Exception {
-                        LogUtil.E("倒计时到了--------");
+                        Logger.d("打卡倒计时到了");
                         node = refshPage();
                         if (node != null && Constant.dingding_PakeName.equals(node.getPackageName().toString())) {
-                            LogUtil.E("已进入app" + node);
                             node = refshPage();
                             if (findResIdById(node, main_page_ResId)) {
-                                LogUtil.E("已进入app主页");
+                                Logger.i("已进入钉钉主页");
                             } else {
-                                LogUtil.E("未进入app主页");
+                                Logger.e("未进入钉钉主页");
                             }
 
                             if (findResIdById(node, search_page_ResId)) {
-                                LogUtil.E("找到搜索节点");
+                                Logger.i("找到钉钉搜索节点");
                             } else {
-                                LogUtil.E("未找到搜索节点");
+                                Logger.e("未找到钉钉搜索节点");
                             }
                             List<AccessibilityNodeInfo> list = node.findAccessibilityNodeInfosByViewId(search_page_ResId);
                             list.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);

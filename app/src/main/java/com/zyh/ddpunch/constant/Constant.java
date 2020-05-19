@@ -1,10 +1,15 @@
 package com.zyh.ddpunch.constant;
 
+import android.os.Environment;
+
 /**
  * Created by zyh on 2020/5/18.
  */
 
 public class Constant {
+
+    public static final int REQUEST_MEDIA_PROJECTION = 18;
+    public static final int REQUEST_WINDOW_GRANT = 201;
 
     public static final String HOST = "smtp.qq.com";
     public static final String PORT = "465";
@@ -18,10 +23,10 @@ public class Constant {
     public static final String emailPassWord = "nqmlrfgwtsrybccc";
 
     //默认上班打卡时间
-    public static final String upJobTime="08:40";
+    public static final String upJobTime="07:49";
 
     //默认下班打卡时间
-    public static final String downJobTime="19:00";
+    public static final String downJobTime="20:10";
 
     //钉钉包名
     public static final String dingding_PakeName="com.alibaba.android.rimet";
@@ -44,5 +49,16 @@ public class Constant {
 
     //打卡搜索框
     public static String tv_page_ResId = "com.alibaba.android.rimet:id/item_name_tv";
+
+    /**
+     * EventBus截取图片完成标记
+     */
+    public static final String EVENT_PIC = "picture";
+
+    public static String sdCardDir = Environment.getExternalStorageDirectory().getPath() + "/dingding/";
+
+    public static final String[] PERMISSIONS_STORAGE = {
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE" };
 
 }

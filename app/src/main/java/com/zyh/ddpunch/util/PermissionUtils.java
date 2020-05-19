@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 import com.zyh.ddpunch.service.MainAccessService;
+import com.zyh.ddpunch.util.log.Logger;
 
 
 /**
@@ -24,7 +25,7 @@ public class PermissionUtils {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             mContext.startActivity(intent);
         } else {
-            LogUtil.E("辅助服务已开启");
+            Logger.d("辅助服务已开启");
         }
     }
 
