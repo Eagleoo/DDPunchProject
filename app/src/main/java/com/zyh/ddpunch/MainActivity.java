@@ -1,5 +1,6 @@
 package com.zyh.ddpunch;
 
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -18,11 +19,13 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.PermissionUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.zyh.ddpunch.bean.EmailBean;
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     private int mScreenDensity;
     private Image image;
     private EmailBean emailBean;
+    private boolean isSend = false;//是否发送邮件（当打卡未收到通知消息，定时发送邮件）
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,17 +93,26 @@ public class MainActivity extends AppCompatActivity {
         EventBus.getDefault().register(this);
         compositeDisposable = new CompositeDisposable();
 
-        PermissionUtils.permission(Constant.PERMISSIONS_STORAGE).request();
+        PermissionUtils.permission(Constant.PERMISSIONS_STORAGE).callback(new PermissionUtils.SimpleCallback() {
+            @Override
+            public void onGranted() {
+                initMediaProjectionManager();
+            }
+
+            @Override
+            public void onDenied() {
+
+            }
+        }).request();
         openAccessSettingOn(this);
         checkTime();
 
-        tvBuildCode.setText("版本号:" + getLocalVersionName(getApplicationContext()));
+        tvBuildCode.setText(String.format("版本号:%s", getLocalVersionName(getApplicationContext())));
 
         if (!isNotificationListenersEnabled(this)) {
             Toast.makeText(MainActivity.this,"请打开通知权限~", Toast.LENGTH_SHORT).show();
         }
         initDisplayData();
-        initMediaProjectionManager();
     }
 
     private void initDisplayData() {
@@ -146,6 +159,10 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Consumer<Long>() {
                     @Override
                     public void accept(Long aLong) throws Exception {
+                        int week = TimeUtils.getWeekIndex(System.currentTimeMillis());
+                        if ( week == 7 || week == 1) {
+                            return;
+                        }
                         startPunch();
                     }
                 }, new Consumer<Throwable>() {
@@ -157,8 +174,8 @@ public class MainActivity extends AppCompatActivity {
         compositeDisposable.add(mTimerSubscribe);
     }
 
-    //初始化时获取截图需要一定时间，这里延迟500毫秒执行
-    private void startCapture() {
+    //打卡成功后有loading图，延迟10s执行
+    private void startCapture(String title, String content) {
         Disposable mImageSubscribe = Observable.timer(10, TimeUnit.SECONDS)
                 .observeOn(Schedulers.io())
                 .doOnNext(new Consumer<Long>() {
@@ -177,14 +194,27 @@ public class MainActivity extends AppCompatActivity {
                 .doOnNext(new Consumer<Long>() {
                     @Override
                     public void accept(Long aLong) throws Exception {
-                        sendEmail(emailBean.getTitle(), emailBean.getContent());
+                        EmailSender sender = new EmailSender();
+                        //设置服务器地址和端口，可以查询网络
+                        sender.setProperties(Constant.HOST, Constant.PORT);
+                        //分别设置发件人，邮件标题和文本内容
+                        sender.setMessage(Constant.sendEmailInfo, title, content);
+                        //设置收件人
+                        sender.setReceiver(new String[]{Constant.receiveEmailInfo});
+                        //添加附件换成你手机里正确的路径
+                        sender.addAttachment(Constant.sdCardDir + "tmplName" + ".jpg");
+                        //发送邮件
+                        sender.sendEmail(Constant.HOST, Constant.sendEmailInfo, Constant.emailPassWord);
                     }
                 })
+                .delay(3, TimeUnit.SECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<Long>() {
                     @Override
                     public void accept(Long aLong) throws Exception {
+                        EventBus.getDefault().post(new EventBusBean(Constant.EVENT_BACK, 0, null));
                         Toast.makeText(MainActivity.this, "发送成功", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -211,37 +241,26 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this,"开启自动打卡", Toast.LENGTH_SHORT).show();
             if (!hasStart) {
                 hasStart = true;
+                isSend = false;
                 startService(new Intent(getApplicationContext(), MainAccessService.class));
             }
         } else {
             hasStart = false;
         }
-        Log.d(TAG, "当前时间："+TimeUtils.millis2String(System.currentTimeMillis(), "HH:mm"));
-    }
-
-    private void sendEmail(final String title, final String content) {
-        //耗时操作要起子线程
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    EmailSender sender = new EmailSender();
-                    //设置服务器地址和端口，可以查询网络
-                    sender.setProperties(Constant.HOST, Constant.PORT);
-                    //分别设置发件人，邮件标题和文本内容
-                    sender.setMessage(Constant.sendEmailInfo, title, content);
-                    //设置收件人
-                    sender.setReceiver(new String[]{Constant.receiveEmailInfo});
-                    //添加附件换成你手机里正确的路径
-                     sender.addAttachment(Constant.sdCardDir + "tmplName" + ".jpg");
-                    //发送邮件
-                    //sender.setMessage("你的163邮箱账号", "EmailS//ender", "Java Mail ！");这里面两个邮箱账号要一致
-                    sender.sendEmail(Constant.HOST, Constant.sendEmailInfo, Constant.emailPassWord);
-                } catch (MessagingException e) {
-                    e.printStackTrace();
-                }
+        //检测是否到发送邮件时间
+        if (TextUtils.equals(TimeUtils.millis2String(System.currentTimeMillis(), "HH:mm"), Constant.sendUpEmailTime)) {
+            if (!isSend) {
+                isSend = true;
+                startCapture(getString(R.string.up_job),getString(R.string.up_job));
             }
-        }).start();
+        }
+        if (TimeUtils.millis2String(System.currentTimeMillis(), "HH:mm").equals(Constant.sendDownEmailTime)) {
+            if (!isSend) {
+                isSend = true;
+                startCapture(getString(R.string.down_job), getString(R.string.down_job));
+            }
+        }
+        Log.d(TAG, "当前时间："+TimeUtils.millis2String(System.currentTimeMillis(), "HH:mm"));
     }
 
     @Override
@@ -273,8 +292,9 @@ public class MainActivity extends AppCompatActivity {
     public void onMessageEvent(final EventBusBean event) {
         switch (event.getReceiveType()) {
             case Constant.EVENT_PIC:
+                isSend = true;
                 emailBean = (EmailBean) event.getContent();
-                startCapture();
+                startCapture(emailBean.getTitle(), emailBean.getContent());
                 break;
             default:
                 break;
@@ -285,18 +305,12 @@ public class MainActivity extends AppCompatActivity {
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.relative:
-
+                startService(new Intent(getApplicationContext(), MainAccessService.class));
+//                startCapture(getString(R.string.up_job),getString(R.string.up_job));
                 break;
             default:
                 break;
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        finish();
-
     }
 
     @Override

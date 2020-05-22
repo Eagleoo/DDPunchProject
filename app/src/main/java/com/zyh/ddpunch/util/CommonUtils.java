@@ -6,8 +6,10 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.Image;
+import android.net.Uri;
 import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,18 +29,16 @@ import static com.zyh.ddpunch.constant.Constant.sdCardDir;
 public class CommonUtils {
 
     //启动第三方app
-    public static boolean startApplication(Context context, String packageName) {
-        boolean rlt = false;
-
-        PackageManager pkgMgr = context.getPackageManager();
-        if (null != pkgMgr) {
-            Intent intent = pkgMgr.getLaunchIntentForPackage(packageName);
-            if (null != intent) {
-                context.startActivity(intent);
-                rlt = true;
-            }
+    public static void startApplication(Context context, String packageName, String activityName) {
+        final PackageManager pm = context.getPackageManager();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (null == pm.getLaunchIntentForPackage(packageName)) {//没有获取到intent
+            Toast.makeText(context, "请先安装钉钉", Toast.LENGTH_LONG).show();
+        } else {
+            intent.setClassName(packageName, activityName);
+            context.startActivity(intent);
         }
-        return rlt;
     }
 
     //通过控件id找到对应元素

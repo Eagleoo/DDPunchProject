@@ -26,10 +26,25 @@ public class Constant {
     public static final String upJobTime="07:49";
 
     //默认下班打卡时间
-    public static final String downJobTime="20:10";
+    public static final String downJobTime="18:00";
+
+    //发送上班邮件时间
+    public static final String sendUpEmailTime="07:55";
+
+    //发送下班邮件时间
+    public static final String sendDownEmailTime="18:03";
+
+    //本项目包名
+    public static final String appPackageName="com.zyh.ddpunch";
+
+    //本项目activity
+    public static final String activityPackageName="com.zyh.ddpunch.MainActivity";
 
     //钉钉包名
     public static final String dingding_PakeName="com.alibaba.android.rimet";
+
+    //钉钉首页
+    public static final String dingding_HomeName="com.alibaba.android.rimet.biz.LaunchHomeActivity";
 
     //手机启动页
     public static final String launcher_PakeName="com.android.launcher3";
@@ -54,6 +69,12 @@ public class Constant {
      * EventBus截取图片完成标记
      */
     public static final String EVENT_PIC = "picture";
+
+    /**
+     * EventBus返回键按下
+     */
+    public static final String EVENT_BACK = "back";
+
 
     public static String sdCardDir = Environment.getExternalStorageDirectory().getPath() + "/dingding/";
 

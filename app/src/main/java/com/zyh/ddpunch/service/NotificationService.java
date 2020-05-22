@@ -53,14 +53,14 @@ public class NotificationService extends NotificationListenerService {
 
             //如果是当天
             if (nowTime.equals(postTime)) {
-                if (text.contains("上班打卡成功")) {
-                    EventBus.getDefault().post(new EventBusBean(Constant.EVENT_PIC, 0, new EmailBean(
-                            TimeUtils.millis2String(System.currentTimeMillis()) + "上班打卡成功", "服务通知2:\n" + text)));
-                }
-                if (text.contains("下班打卡成功")) {
-                    EventBus.getDefault().post(new EventBusBean(Constant.EVENT_PIC, 0, new EmailBean(
-                            TimeUtils.millis2String(System.currentTimeMillis()) + "下班打卡成功", "服务通知2:\n" + text)));
-                }
+//                if (text.contains("上班打卡成功")) {
+//                    EventBus.getDefault().post(new EventBusBean(Constant.EVENT_PIC, 0, new EmailBean(
+//                            TimeUtils.millis2String(System.currentTimeMillis()) + "上班打卡成功", "服务通知2:\n" + text)));
+//                }
+//                if (text.contains("下班打卡成功")) {
+//                    EventBus.getDefault().post(new EventBusBean(Constant.EVENT_PIC, 0, new EmailBean(
+//                            TimeUtils.millis2String(System.currentTimeMillis()) + "下班打卡成功", "服务通知2:\n" + text)));
+//                }
             }
             cancelAllNotifications();
         }

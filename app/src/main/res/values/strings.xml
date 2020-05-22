@@ -5,4 +5,6 @@
     <string name="cur_time">当前时间：</string>
     <string name="tv_version">版本号：</string>
     <string name="format24Hour">HH:mm:ss</string>
+    <string name="down_job">下班打卡成功通知</string>
+    <string name="up_job">上班打卡成功！</string>
 </resources>

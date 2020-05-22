@@ -1,14 +1,23 @@
 package com.zyh.ddpunch.service;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.Instrumentation;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
+import com.blankj.utilcode.util.AppUtils;
+import com.zyh.ddpunch.bean.EmailBean;
+import com.zyh.ddpunch.bean.EventBusBean;
 import com.zyh.ddpunch.constant.Constant;
 import com.zyh.ddpunch.util.log.Logger;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +47,7 @@ public class MainAccessService extends AccessibilityService {
     @Override
     public void onCreate() {
         super.onCreate();
+        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -53,7 +63,7 @@ public class MainAccessService extends AccessibilityService {
     }
 
     private void startCSer() {
-        startApplication(getApplicationContext(), Constant.dingding_PakeName);
+        startApplication(getApplicationContext(), Constant.dingding_PakeName, Constant.dingding_HomeName);
         Disposable subscribe = Observable.timer(15, TimeUnit.SECONDS)//打开钉钉界面有延迟
                 .subscribeOn(Schedulers.io())
                 .doOnNext(new Consumer<Long>() {
@@ -98,6 +108,37 @@ public class MainAccessService extends AccessibilityService {
         return getRootInActiveWindow();
     }
 
+    @Subscribe
+    public void onMessageEvent(final EventBusBean event) {
+        switch (event.getReceiveType()) {
+            case Constant.EVENT_BACK:
+                Disposable mTimerSubscribe = Observable
+                        .timer(5, TimeUnit.SECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext(new Consumer<Long>() {
+                            @Override
+                            public void accept(Long aLong) throws Exception {
+                                //先清除活动栈，避免再次拉起钉钉时保持在原界面
+                                startApplication(getApplicationContext(), Constant.dingding_PakeName, Constant.dingding_HomeName);
+                            }
+                        })
+                        .delay(3, TimeUnit.SECONDS)
+                        .subscribe(new Consumer<Long>() {
+                            @Override
+                            public void accept(Long aLong) throws Exception {
+                                startApplication(MainAccessService.this,Constant.appPackageName, Constant.activityPackageName);
+                            }
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                                throwable.printStackTrace();
+                            }
+                        });
+                break;
+            default:
+                break;
+        }
+    }
     @Override
     public void onInterrupt() {
 
